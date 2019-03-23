@@ -6,46 +6,44 @@ import time
 import sys
 import json
 
-def launch_master_thread(n, ids, root, conn_matrix):
-    global id_process, id_label
-    i=0
-    for p_id in ids:
-        id_label[p_id] = i
-        i += 1
-    i=0
-    index_to_id = {}
-    for p_id in ids:
-        index_to_id[i] = p_id
-        i += 1
+def launch_master_thread(n, r, x, input_val):
+    process_ids = [i for i in range(n+1)] #0th process id for master
     print(f'In master thread. Launching {n} threads..')
     initial_config = {}
     q = [] #list of communication channels
-    for i in range(n):
+    for i in range(n+1):
         q.append(Queue()) #append comm channel for each process
-    q.append(Queue()) # last comm channel to communicate with master
-    for pid in ids:
-        initial_config[int(pid)] = {'parent': None,
-                                    'children':[],
-                                    'marked':False,
-                                    'sent':[],
-                                    'r':0,
-                                    'my_index':id_label[int(pid)], #to know which queue belongs to me from the array q
+    for pid in process_ids:
+        val_vector=[]
+        level_vector = []
+        for i in range(n):
+            if i!=pid-1:
+                val_vector.append(None)
+                level_vector.append(-1)
+            else:
+                val_vector.append(input_val[pid-1])
+                level_vector.append(0)
+        initial_config[int(pid)] = {'decision': None,
+                                    'key' : None,
+                                    'value': val_vector,
+                                    'level': level_vector,
+                                    'r': 1,
+                                    'total_rounds': r
                                     }
-    initial_config['comm']=q
+    initial_config['comm'] = q
     threadLock = threading.Lock()
-    r=1
-    cleanup = False
-    while True:
-        print(f'********** master broadcast {r} ***********')
-        if r==1:
+    roundno = 1
+    leader = 1 #each process knows that the leader is 1
+    while roundno < r+1:
+        print(f'********** Round {roundno} ***********')
+        if roundno==1:
             config = initial_config
-            latest_q = q[-1]
-            print(f'|| BFS LEVEL: {root}')
-        r = r+1
-        id_process = launch_threads(ids, conn_matrix, root, config)
+            latest_q = q[0]
+        roundno = roundno + 1
+        id_process = launch_threads(n, leader, x, config)
         config={}
         done_threads=[]
-        while True: #wait for all threads to complete one round after the first broadcast
+        while True: 
             if len(done_threads) == len(id_process):
                 break
             tmp=None
@@ -55,55 +53,36 @@ def launch_master_thread(n, ids, root, conn_matrix):
             threadLock.release()
             if tmp==None:
                 continue
-            else:    #if tmp.receiverID == 'Master':
+            else:   
                 config[tmp.senderID] = tmp.msg_type['done_msg'] 
                 config['comm'] = tmp.msg_type['comm']
-                latest_q = tmp.msg_type['comm'][-1]
+                latest_q = tmp.msg_type['comm'][0]
                 done_threads.append(tmp.senderID)
         for v in id_process.values():
             v.join()
-        # check termination
-        visited = []
-        for key in config.keys():
-            if key!="comm":
-                if config[key]['marked']==True:
-                    visited.append(key)
-        if len(visited)==n:
-            if not cleanup:
-                cleanup=True
-            else:
-                break
-    print('**********************************************')
+    print("********* SUMMARY ***********")
     for c in config:
         if c!="comm":
-            print(f'{c} : Parent: {index_to_id[config[c]["parent"]]} Children: {config[c]["children"]} Marked: {config[c]["marked"]}')
+            print(f'ID: {c} | Decision: {config[c]["decision"]} | Level Vector: {config[c]["level"]} | Value Vector: {config[c]["value"]} | Key: {config[c]["key"]}')
     print('exiting master thread. bye!')
 
-def launch_threads(ids, conn_matrix, root, config):
-    for p_id, conn in zip(ids, conn_matrix):
-        process = Process(int(p_id), root, conn, config)
-        id_process[p_id] = process  
+def launch_threads(n, leader, x, config):
+    id_process = {}
+    for p_id in range(n):
+        process = Process(int(p_id+1), n, leader, x, config)
+        id_process[p_id+1] = process  
     for v in id_process.values():
             v.start()
     return id_process
 
 if __name__=="__main__":
-    with open("input.dat","r") as dat_file:
+    with open("input_basic.dat","r") as dat_file:
         data = dat_file.readlines()
-    n = int(data[0])
-    root = int(data[2])
-    ids = data[1].strip()[1:-1].split(",")
-    for i in range(len(ids)): ids[i] = int(ids[i])
-    matrix_rows = data[3][2:-3].split("],[")
-    connectivity_matrix = []
-    for row in matrix_rows:
-        connectivity_matrix.append(row.split(","))
-    for row in range(len(connectivity_matrix)):
-        for j in range(len(connectivity_matrix)):
-            connectivity_matrix[row][j] = int(connectivity_matrix[row][j])
-    id_process = {}
-    id_label = {} 
-    master_thread = threading.Thread(name='master',target=launch_master_thread, args=(n, ids, root, connectivity_matrix))
+    n = int(data[0]) #number of processes
+    r = int(data[1]) #number of rounds
+    x = int(data[2]) #xth msg lost
+    input_val = data[3].strip()[1:-1].split(",")
+    master_thread = threading.Thread(name='master',target=launch_master_thread, args=(n, r, x, input_val))
     master_thread.start()    
 
 
