@@ -1,6 +1,7 @@
 from queue import Queue
 from message import Message
 from process import Process
+import process
 import threading
 import time
 import sys
@@ -61,6 +62,7 @@ def launch_master_thread(n, r, x, input_val):
         for v in id_process.values():
             v.join()
     print("********* SUMMARY ***********")
+    print(f"Msg counter: {process.msg_counter}")
     for c in config:
         if c!="comm":
             print(f'ID: {c} | Decision: {config[c]["decision"]} | Level Vector: {config[c]["level"]} | Value Vector: {config[c]["value"]} | Key: {config[c]["key"]}')

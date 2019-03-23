@@ -1,0 +1,62 @@
+In master thread. Launching 3 threads..
+********** Round 1 ***********
+Leader 1 chose key 3
+---------------------> msg_count:  1
+1: sent <Message sender: 1 | receiver: 2 | msg_type: inter-thread:1 | level: [0, -1, -1] | value: ['1', None, None] | key: 3 > to queue
+---------------------> msg_count:  2
+-- dropping msg 2 x x x ----
+1 pending msgs: 0
+---------------------> msg_count:  3
+2: sent <Message sender: 2 | receiver: 1 | msg_type: inter-thread:1 | level: [-1, 0, -1] | value: [None, '1', None] | key: None > to queue
+---------------------> msg_count:  4
+-- dropping msg 4 x x x ----
+2 pending msgs: 0
+---------------------> msg_count:  5
+3: sent <Message sender: 3 | receiver: 1 | msg_type: inter-thread:1 | level: [-1, -1, 0] | value: [None, None, '1'] | key: None > to queue
+---------------------> msg_count:  6
+-- dropping msg 6 x x x ----
+3 pending msgs: 0
+********** Round 2 ***********
+---------------------> msg_count:  7
+1: sent <Message sender: 1 | receiver: 2 | msg_type: inter-thread:2 | level: [0, -1, -1] | value: ['1', None, None] | key: 3 > to queue
+---------------------> msg_count:  8
+-- dropping msg 8 x x x ----
+1 pending msgs: 2
+1: Receiving msg <Message sender: 2 | receiver: 1 | msg_type: inter-thread:1 | level: [-1, 0, -1] | value: [None, '1', None] | key: None >
+1: Receiving msg <Message sender: 3 | receiver: 1 | msg_type: inter-thread:1 | level: [-1, -1, 0] | value: [None, None, '1'] | key: None >
+---------------------> msg_count:  9
+2: sent <Message sender: 2 | receiver: 1 | msg_type: inter-thread:2 | level: [-1, 0, -1] | value: [None, '1', None] | key: None > to queue
+---------------------> msg_count:  10
+-- dropping msg 10 x x x ----
+2 pending msgs: 1
+2: Receiving msg <Message sender: 1 | receiver: 2 | msg_type: inter-thread:1 | level: [1, 0, 0] | value: ['1', '1', '1'] | key: 3 >
+---------------------> msg_count:  11
+3: sent <Message sender: 3 | receiver: 1 | msg_type: inter-thread:2 | level: [-1, -1, 0] | value: [None, None, '1'] | key: None > to queue
+---------------------> msg_count:  12
+-- dropping msg 12 x x x ----
+3 pending msgs: 0
+********** Round 3 ***********
+---------------------> msg_count:  13
+1: sent <Message sender: 1 | receiver: 2 | msg_type: inter-thread:3 | level: [1, 0, 0] | value: ['1', '1', '1'] | key: 3 > to queue
+---------------------> msg_count:  14
+-- dropping msg 14 x x x ----
+1 pending msgs: 2
+1: Receiving msg <Message sender: 2 | receiver: 1 | msg_type: inter-thread:2 | level: [1, 1, 0] | value: ['1', '1', '1'] | key: None >
+1: Receiving msg <Message sender: 3 | receiver: 1 | msg_type: inter-thread:2 | level: [-1, -1, 0] | value: [None, None, '1'] | key: None >
+---------------------> msg_count:  15
+2: sent <Message sender: 2 | receiver: 1 | msg_type: inter-thread:3 | level: [1, 1, 0] | value: ['1', '1', '1'] | key: 3 > to queue
+---------------------> msg_count:  16
+-- dropping msg 16 x x x ----
+2 pending msgs: 1
+2: Receiving msg <Message sender: 1 | receiver: 2 | msg_type: inter-thread:2 | level: [1, 1, 0] | value: ['1', '1', '1'] | key: 3 >
+---------------------> msg_count:  17
+3: sent <Message sender: 3 | receiver: 1 | msg_type: inter-thread:3 | level: [-1, -1, 0] | value: [None, None, '1'] | key: None > to queue
+---------------------> msg_count:  18
+-- dropping msg 18 x x x ----
+3 pending msgs: 0
+********* SUMMARY ***********
+Msg counter: 18
+ID: 1 | Decision: 0 | Level Vector: [1, 1, 0] | Value Vector: ['1', '1', '1'] | Key: 3
+ID: 2 | Decision: 0 | Level Vector: [1, 1, 0] | Value Vector: ['1', '1', '1'] | Key: 3
+ID: 3 | Decision: None | Level Vector: [-1, -1, 0] | Value Vector: [None, None, '1'] | Key: None
+exiting master thread. bye!

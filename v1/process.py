@@ -5,13 +5,13 @@ import time
 import random
 
 threadLock = threading.Lock()
-
-
+msg_counter = 0
 class Process(threading.Thread):
     def __init__(self, pid, n, leader, x, config):
         threading.Thread.__init__(self)
         self.pid = pid
         self.n = n
+        self.x = x
         self.leader = leader
         self.comm_channel = config['comm']
         self.decision = config[pid]['decision']
@@ -41,8 +41,9 @@ class Process(threading.Thread):
             tmp = self.q.get()
             threadLock.release()
             if (int(tmp.msg_type.split(':')[1])<self.roundNumber):
-                print(f'{self.pid}: Receiving msg {tmp}')
-                self.receive_message(tmp.senderID, tmp)
+                if 'x' not in tmp.msg_type:
+                    print(f'{self.pid}: Receiving msg {tmp}')
+                    self.receive_message(tmp.senderID, tmp)
                 pending_msgs -= 1
         self.comm_channel[int(self.pid)] = self.q
         done_msg = {'decision': self.decision,
@@ -61,11 +62,18 @@ class Process(threading.Thread):
 
 
     def send_message(self, receiver):
-        msg = Message(self.pid, int(receiver), f'inter-thread:{self.roundNumber}', self.level_v, self.value_v, self.key)
+        global msg_counter 
         threadLock.acquire()
-        self.comm_channel[int(receiver)].put(msg)
+        msg_counter += 1
+        print("---------------------> msg_count: ", msg_counter)
+        if msg_counter%self.x == 0:
+            msg = Message(self.pid, int(receiver), f'x-inter-thread:{self.roundNumber}', self.level_v, self.value_v, self.key)
+            print(f"-- dropping msg {msg_counter} x x x ----")
+        else:
+            msg = Message(self.pid, int(receiver), f'inter-thread:{self.roundNumber}', self.level_v, self.value_v, self.key)
+            self.comm_channel[int(receiver)].put(msg)
+            print(f'{self.pid}: sent {msg} to queue')
         threadLock.release()
-        print(f'{self.pid}: sent {msg} to queue')
         
     def receive_message(self, sender_pid, msg):
         if msg.key != None:
